@@ -1,56 +1,145 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Calorías</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#111">
+<meta charset="UTF-8">
+<title>Calorías PRO</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<style>
+body{
+  background:#0f172a;
+  color:white;
+  font-family:Arial;
+  text-align:center;
+}
+
+h1{color:#22c55e;}
+
+input{
+  padding:8px;
+  margin:5px;
+  border-radius:8px;
+  border:none;
+}
+
+button{
+  padding:10px;
+  margin:5px;
+  border:none;
+  border-radius:10px;
+  background:#22c55e;
+  color:white;
+  font-weight:bold;
+}
+
+.card{
+  background:#1e293b;
+  margin:10px;
+  padding:10px;
+  border-radius:10px;
+}
+</style>
 </head>
-
-<body style="background:#111;color:white;text-align:center;font-family:Arial;">
-
-<h1>🔥 Mis Calorías</h1>
-
+<body>
+<h1>🔥 Calorías PRO</h1>
+<div class="card">
+<h3>Meta diaria</h3>
+<input id="meta" type="number" placeholder="2000 kcal">
+</div>
+<div class="card">
 <input id="comida" placeholder="Comida">
 <input id="cal" type="number" placeholder="Calorías">
-<button onclick="agregar()">Agregar</button>
-
-<h2>Total: <span id="total">0</span></h2>
-
+<input id="prote" type="number" placeholder="Proteína">
+<input id="carbs" type="number" placeholder="Carbs">
+<input id="grasas" type="number" placeholder="Grasas">
+<br>
+<button onclick="agregar()">➕ Agregar</button>
+<button onclick="resetear()">🔄 Reset</button>
+</div>
+<div class="card">
+<h2>Total: <span id="total">0</span> kcal</h2>
+<h3>🥩 Proteína: <span id="tprote">0</span></h3>
+<h3>🍞 Carbs: <span id="tcarbs">0</span></h3>
+<h3>🥑 Grasas: <span id="tgrasas">0</span></h3>
+</div>
+<div class="card">
+<h3>Progreso</h3>
+<div style="background:#334155;border-radius:10px;">
+  <div id="barra" style="height:20px;background:#22c55e;width:0%;border-radius:10px;"></div>
+</div>
+<p id="mensaje"></p>
+</div>
+<div class="card">
+<h3>Historial</h3>
 <div id="lista"></div>
-
+</div>
 <script>
 let datos = JSON.parse(localStorage.getItem("datos")) || [];
+let meta = localStorage.getItem("meta") || 0;
+
+document.getElementById("meta").value = meta;
 
 function guardar(){
   localStorage.setItem("datos", JSON.stringify(datos));
+  localStorage.setItem("meta", document.getElementById("meta").value);
 }
 
 function mostrar(){
-  let total = 0;
+  let total=0, prote=0, carbs=0, grasas=0;
   let lista = document.getElementById("lista");
-  lista.innerHTML = "";
+  lista.innerHTML="";
 
   datos.forEach((d,i)=>{
-    total += d.cal;
+    total+=d.cal;
+    prote+=d.prote;
+    carbs+=d.carbs;
+    grasas+=d.grasas;
+
     lista.innerHTML += `
-      <p>${d.comida} - ${d.cal} 
-      <button onclick="borrar(${i})">❌</button></p>
+      <div class="card">
+        ${d.comida} - ${d.cal} kcal
+        <br>
+        🥩 ${d.prote} | 🍞 ${d.carbs} | 🥑 ${d.grasas}
+        <br>
+        <button onclick="borrar(${i})">❌</button>
+      </div>
     `;
   });
 
-  document.getElementById("total").innerText = total;
+  document.getElementById("total").innerText=total;
+  document.getElementById("tprote").innerText=prote;
+  document.getElementById("tcarbs").innerText=carbs;
+  document.getElementById("tgrasas").innerText=grasas;
+
+  let metaVal=document.getElementById("meta").value;
+  let progreso = metaVal ? (total/metaVal)*100 : 0;
+
+  document.getElementById("barra").style.width = progreso+"%";
+
+  if(progreso>=100){
+    document.getElementById("mensaje").innerText="🔥 META CUMPLIDA";
+  } else if(progreso>=70){
+    document.getElementById("mensaje").innerText="💪 Vas bien";
+  } else {
+    document.getElementById("mensaje").innerText="";
+  }
 }
 
 function agregar(){
-  let comida = document.getElementById("comida").value;
-  let cal = parseInt(document.getElementById("cal").value);
+  let comida=document.getElementById("comida").value;
+  let cal=parseInt(document.getElementById("cal").value);
+  let prote=parseInt(document.getElementById("prote").value)||0;
+  let carbs=parseInt(document.getElementById("carbs").value)||0;
+  let grasas=parseInt(document.getElementById("grasas").value)||0;
 
-  if(!comida || !cal) return alert("Llena todo");
+  if(!comida || !cal) return alert("Llena lo básico");
 
-  datos.push({comida, cal});
+  datos.push({comida, cal, prote, carbs, grasas});
   guardar();
   mostrar();
+
+  document.getElementById("comida").value="";
+  document.getElementById("cal").value="";
 }
 
 function borrar(i){
@@ -59,8 +148,16 @@ function borrar(i){
   mostrar();
 }
 
+function resetear(){
+  if(confirm("¿Seguro?")){
+    datos=[];
+    guardar();
+    mostrar();
+  }
+}
+
 mostrar();
 </script>
-
 </body>
 </html>
+:::
