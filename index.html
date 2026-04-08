@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Calorías</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#111">
+</head>
+
+<body style="background:#111;color:white;text-align:center;font-family:Arial;">
+
+<h1>🔥 Mis Calorías</h1>
+
+<input id="comida" placeholder="Comida">
+<input id="cal" type="number" placeholder="Calorías">
+<button onclick="agregar()">Agregar</button>
+
+<h2>Total: <span id="total">0</span></h2>
+
+<div id="lista"></div>
+
+<script>
+let datos = JSON.parse(localStorage.getItem("datos")) || [];
+
+function guardar(){
+  localStorage.setItem("datos", JSON.stringify(datos));
+}
+
+function mostrar(){
+  let total = 0;
+  let lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  datos.forEach((d,i)=>{
+    total += d.cal;
+    lista.innerHTML += `
+      <p>${d.comida} - ${d.cal} 
+      <button onclick="borrar(${i})">❌</button></p>
+    `;
+  });
+
+  document.getElementById("total").innerText = total;
+}
+
+function agregar(){
+  let comida = document.getElementById("comida").value;
+  let cal = parseInt(document.getElementById("cal").value);
+
+  if(!comida || !cal) return alert("Llena todo");
+
+  datos.push({comida, cal});
+  guardar();
+  mostrar();
+}
+
+function borrar(i){
+  datos.splice(i,1);
+  guardar();
+  mostrar();
+}
+
+mostrar();
+</script>
+
+</body>
+</html>
