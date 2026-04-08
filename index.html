@@ -2,161 +2,197 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Calorías PRO</title>
+<title>FitTrack Pro+</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f172a">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 body{
-  background:#0f172a;
-  color:white;
+  margin:0;
   font-family:Arial;
-  text-align:center;
+  background:#020617;
+  color:white;
 }
-
-h1{color:#22c55e;}
-
-input{
+header{
+  background:#020617;
+  padding:15px;
+  text-align:center;
+  font-size:20px;
+  color:#22c55e;
+  border-bottom:1px solid #1e293b;
+}
+.container{padding:10px;}
+.card{
+  background:#1e293b;
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:10px;
+}
+input,button{
   padding:8px;
-  margin:5px;
+  margin:4px;
   border-radius:8px;
   border:none;
 }
-
 button{
-  padding:10px;
-  margin:5px;
-  border:none;
-  border-radius:10px;
   background:#22c55e;
   color:white;
   font-weight:bold;
 }
-
-.card{
-  background:#1e293b;
-  margin:10px;
-  padding:10px;
-  border-radius:10px;
-}
+.progress{background:#334155;border-radius:10px;}
+.bar{height:20px;background:#22c55e;width:0%;}
+.small{font-size:12px;color:#94a3b8;}
 </style>
 </head>
 <body>
-<h1>🔥 Calorías PRO</h1>
+<header>🔥 FitTrack PRO+</header>
+<div class="container">
 <div class="card">
-<h3>Meta diaria</h3>
-<input id="meta" type="number" placeholder="2000 kcal">
+Meta diaria:
+<input id="meta" type="number" placeholder="2000">
+<button onclick="guardarMeta()">Guardar</button>
 </div>
 <div class="card">
 <input id="comida" placeholder="Comida">
-<input id="cal" type="number" placeholder="Calorías">
-<input id="prote" type="number" placeholder="Proteína">
+<input id="cal" type="number" placeholder="Cal">
+<input id="prote" type="number" placeholder="Prot">
 <input id="carbs" type="number" placeholder="Carbs">
 <input id="grasas" type="number" placeholder="Grasas">
 <br>
-<button onclick="agregar()">➕ Agregar</button>
-<button onclick="resetear()">🔄 Reset</button>
+<button onclick="agregar()">Agregar</button>
+<button onclick="resetear()">Nuevo Día</button>
 </div>
 <div class="card">
-<h2>Total: <span id="total">0</span> kcal</h2>
-<h3>🥩 Proteína: <span id="tprote">0</span></h3>
-<h3>🍞 Carbs: <span id="tcarbs">0</span></h3>
-<h3>🥑 Grasas: <span id="tgrasas">0</span></h3>
-</div>
-<div class="card">
-<h3>Progreso</h3>
-<div style="background:#334155;border-radius:10px;">
-  <div id="barra" style="height:20px;background:#22c55e;width:0%;border-radius:10px;"></div>
-</div>
+<h3>Resumen Diario</h3>
+Total: <span id="total">0</span> kcal<br>
+🥩 <span id="tprote">0</span>  
+🍞 <span id="tcarbs">0</span>  
+🥑 <span id="tgrasas">0</span>
+<div class="progress"><div id="barra" class="bar"></div></div>
 <p id="mensaje"></p>
 </div>
 <div class="card">
-<h3>Historial</h3>
-<div id="lista"></div>
+<h3>Macros</h3>
+<canvas id="grafica"></canvas>
+</div>
+<div class="card">
+<h3>Exportar / Backup</h3>
+<button onclick="exportar()">📥 Descargar datos</button>
+<button onclick="importar()">📤 Cargar datos</button>
+<input type="file" id="fileInput" style="display:none">
+</div>
 </div>
 <script>
 let datos = JSON.parse(localStorage.getItem("datos")) || [];
 let meta = localStorage.getItem("meta") || 0;
 
-document.getElementById("meta").value = meta;
+metaInput.value = meta;
 
 function guardar(){
   localStorage.setItem("datos", JSON.stringify(datos));
-  localStorage.setItem("meta", document.getElementById("meta").value);
 }
 
-function mostrar(){
-  let total=0, prote=0, carbs=0, grasas=0;
-  let lista = document.getElementById("lista");
-  lista.innerHTML="";
+function guardarMeta(){
+  localStorage.setItem("meta", metaInput.value);
+}
 
-  datos.forEach((d,i)=>{
-    total+=d.cal;
-    prote+=d.prote;
-    carbs+=d.carbs;
-    grasas+=d.grasas;
-
-    lista.innerHTML += `
-      <div class="card">
-        ${d.comida} - ${d.cal} kcal
-        <br>
-        🥩 ${d.prote} | 🍞 ${d.carbs} | 🥑 ${d.grasas}
-        <br>
-        <button onclick="borrar(${i})">❌</button>
-      </div>
-    `;
-  });
-
-  document.getElementById("total").innerText=total;
-  document.getElementById("tprote").innerText=prote;
-  document.getElementById("tcarbs").innerText=carbs;
-  document.getElementById("tgrasas").innerText=grasas;
-
-  let metaVal=document.getElementById("meta").value;
-  let progreso = metaVal ? (total/metaVal)*100 : 0;
-
-  document.getElementById("barra").style.width = progreso+"%";
-
-  if(progreso>=100){
-    document.getElementById("mensaje").innerText="🔥 META CUMPLIDA";
-  } else if(progreso>=70){
-    document.getElementById("mensaje").innerText="💪 Vas bien";
-  } else {
-    document.getElementById("mensaje").innerText="";
-  }
+function hoy(){
+  return new Date().toLocaleDateString();
 }
 
 function agregar(){
-  let comida=document.getElementById("comida").value;
-  let cal=parseInt(document.getElementById("cal").value);
-  let prote=parseInt(document.getElementById("prote").value)||0;
-  let carbs=parseInt(document.getElementById("carbs").value)||0;
-  let grasas=parseInt(document.getElementById("grasas").value)||0;
+  let comida = comidaInput.value;
+  let cal = parseInt(calInput.value);
+  let prote = parseInt(proteInput.value)||0;
+  let carbs = parseInt(carbsInput.value)||0;
+  let grasas = parseInt(grasasInput.value)||0;
 
-  if(!comida || !cal) return alert("Llena lo básico");
+  if(!comida || !cal) return alert("Faltan datos");
 
-  datos.push({comida, cal, prote, carbs, grasas});
+  datos.push({comida, cal, prote, carbs, grasas, fecha:hoy()});
   guardar();
-  mostrar();
-
-  document.getElementById("comida").value="";
-  document.getElementById("cal").value="";
-}
-
-function borrar(i){
-  datos.splice(i,1);
-  guardar();
-  mostrar();
+  render();
 }
 
 function resetear(){
-  if(confirm("¿Seguro?")){
-    datos=[];
+  if(confirm("Nuevo día?")){
+    datos.push({nuevoDia:true, fecha:hoy()});
     guardar();
-    mostrar();
+    render();
   }
 }
 
-mostrar();
+function render(){
+  let total=0, p=0, c=0, g=0;
+  let diasAgrupados = {};
+
+  datos.forEach(d=>{
+    if(!diasAgrupados[d.fecha]) diasAgrupados[d.fecha]=[];
+    diasAgrupados[d.fecha].push(d);
+
+    if(d.fecha===hoy() && !d.nuevoDia){
+      total+=d.cal;
+      p+=d.prote;
+      c+=d.carbs;
+      g+=d.grasas;
+    }
+  });
+
+  totalSpan.innerText=total;
+  tprote.innerText=p;
+  tcarbs.innerText=c;
+  tgrasas.innerText=g;
+
+  let progreso = metaInput.value ? (total/metaInput.value)*100 : 0;
+  barra.style.width = progreso+"%";
+
+  mensaje.innerText = progreso>=100 ? "🔥 Meta lograda" : "";
+
+  dias.innerHTML="";
+  for(let fecha in diasAgrupados){
+    dias.innerHTML+=`<div class="card"><b>${fecha}</b></div>`;
+  }
+
+  actualizarGrafica(p,c,g);
+}
+
+let chart;
+function actualizarGrafica(p,c,g){
+  if(chart) chart.destroy();
+  chart = new Chart(grafica,{
+    type:'pie',
+    data:{
+      labels:['Proteína','Carbs','Grasas'],
+      datasets:[{data:[p,c,g]}]
+    }
+  });
+}
+
+function exportar(){
+  let dataStr = JSON.stringify(datos);
+  let blob = new Blob([dataStr], {type:"application/json"});
+  let a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "datos_fittrack.json";
+  a.click();
+}
+
+function importar(){
+  fileInput.click();
+}
+
+fileInput.addEventListener("change", function(){
+  let file = this.files[0];
+  let reader = new FileReader();
+  reader.onload = function(){
+    datos = JSON.parse(reader.result);
+    guardar();
+    render();
+  };
+  reader.readAsText(file);
+});
+
+render();
 </script>
 </body>
 </html>
